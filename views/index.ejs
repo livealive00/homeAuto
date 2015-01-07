@@ -6,17 +6,110 @@
 	<meta name="apple-mobile-web-app-capable" content="yes" />
 
 	<title><%= title %></title>
-	<link rel="stylesheet" href="/css/bootstrap/css/bootstrap.css"/>
+	<link rel="stylesheet" href="/bootstrap/css/bootstrap.css"/>
+	<link rel="stylesheet" href="/css/global.css"/>
 	<style>
-	
 	</style>
 </head>
 
+<!--  http://www.bootstrapzero.com/bootstrap-template/responsivedashboard  -->
 <body>
-	<h1><%= title %></h1>
-	<p>Welcome to <%= title %></p>
+	<div class="site-wrapper">
+		<div class="site-wrapper-inner">
+			<div class="cover-container">
+			
+				<div class="masthead clearfix">
+					<div class="inner">
+						<h3 class="masthead-brand"><span class="glyphicon glyphicon-home"></span></h3>
+						<nav>
+							<ul class="nav masthead-nav" role="tablist">
+								<li role="presentation" class="active"><a href="#boiler" id="tabBoiler" role="tab" data-toggle="tab">Boiler</a></li>
+								<li role="presentation"><a href="#laptop" id="tabLaptop" role="tab" data-toggle="tab">Laptop</a></li>
+								<li role="presentation"><a href="#others" id="tabOthers" role="tab" data-toggle="tab">Others</a></li>
+							</ul>
+						</nav>
+					</div>
+				</div>
+				
+				<div class="tab-content" style="margin: 20px 0; padding-bottom:5px">
+					<div role="tabpanel" class="tab-pane fade in active" id="boiler">
+						<div class="inner cover">
+							<h1 class="cover-heading" id="btnUpdateTemp"><span id="temperature">21</span>°C</h1>
+							<p class="lead">
+								<a href="#" id="btnBoilerOn" class="btnBoiler btn btn-lg btn-default"><span class="glyphicon glyphicon-ok"></span> On</a>
+								<a href="#" id="btnBoilerOff" class="btnBoiler btn btn-lg btn-default"><span class="glyphicon"></span> Off</a>
+							</p>
+						</div>
+					</div>
+					
+					<div role="tabpanel" class="tab-pane fade" id="laptop">
+						<div class="inner cover">
+							<p class="lead">
+								<a href="#" id="btnLaptopOn" class="btn btn-lg btn-default">Power On</a>
+							</p>
+						</div>
+					</div>
+					
+					<div role="tabpanel" class="tab-pane fade" id="others">
+						<div class="inner cover">
+							<p class="lead">
+								<h4>What else?</h4>
+							</p>
+						</div>
+					</div>
+				</div>
+				
+				<div class="mastfoot">
+					<div class="inner">
+						<p>&copy; psh 2015</p>
+					</div>
+				</div>
+			
+			</div>
+		</div>
+	</div>
+	
+	<script src="/js/lib/jquery-2.1.1.min.js"></script>
+	<script src="/bootstrap/js/bootstrap.min.js"></script>
+	<script>
+	$(function(){
+		$("#tabBoiler, #btnUpdateTemp").click(function(){
+			$.get("/boiler/info.json", {}, function(data){
+				$("#temperature").html(data.temp);
+				updateBoilerStatus(data.boilerStatus);
+			});
+		});
+		
+		$("#btnBoilerOn").click(function(){
+			$.get("/boiler/on.json", {}, function(data){
+				updateBoilerStatus(data.boilerStatus);
+			});
+		});
+		
+		$("#btnBoilerOff").click(function() {
+			$.get("/boiler/off.json", {}, function(data){
+				updateBoilerStatus(data.boilerStatus);
+			});
+		});
+		
+		$("#btnLaptopOn").click(function() {
+			$.get("/laptop/on.json", {}, function(data){
+				alert("power on");
+			});
+		});
+
+	});
+	
+	function updateBoilerStatus(boilerStatus) {
+		console.log(boilerStatus)
+		$(".btnBoiler>span").removeClass("glyphicon-ok");
+		if(boilerStatus == "on") {
+			$("#btnBoilerOn>span").addClass("glyphicon-ok");
+		} else {
+			$("#btnBoilerOff>span").addClass("glyphicon-ok");
+		}
+	}
+	</script>
 </body>
 
-<script src="/js/lib/jquery-2.1.1.min.js"></script>
-<script></script>
 </html>
