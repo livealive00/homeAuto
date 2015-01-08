@@ -35,7 +35,7 @@
 					<div role="tabpanel" class="tab-pane fade in active" id="boiler">
 						<div class="inner cover">
 							<h1 class="cover-heading" id="btnUpdateTemp">
-								<span id="temperature">21</span>°C
+								<span id="temperature"></span>°C
 								<span id="icoBoilerOn" style="font-size:70%" class="glyphicon glyphicon-fire"></span>
 							</h1>
 							<p class="lead">
@@ -77,34 +77,46 @@
 	<script>
 	$(function(){
 		$("#tabBoiler, #btnUpdateTemp").click(function(){
-			$.get("/boiler/info.json", {}, function(data){
-				$("#temperature").html(data.temp);
-				updateBoilerStatus(data.boilerStatus);
-			});
+			updateBoilerInfo();
 		});
 		
 		$("#btnBoilerOn").click(function(){
-			$.get("/boiler/on.json", {}, function(data){
+			$.get("/boiler/update.json", {status: "on"}, function(data){
 				updateBoilerStatus(data.boilerStatus);
 			});
 		});
 		
 		$("#btnBoilerOff").click(function() {
-			$.get("/boiler/off.json", {}, function(data){
+			$.get("/boiler/update.json", {status: "off"}, function(data){
 				updateBoilerStatus(data.boilerStatus);
 			});
 		});
 		
 		$("#btnLaptopOn").click(function() {
 			$.get("/laptop/on.json", {}, function(data){
-				alert("power on");
+				console.log("power on : " + data.success);
 			});
 		});
 
+		updateBoilerInfo();
 	});
 	
-	function updateBoilerStatus(boilerStatus) {
-		console.log(boilerStatus)
+	function updateBoilerInfo() {
+		$.get("/boiler/info.json", {}, function(data){
+			displayBoilerInfo(data);
+		});
+	}
+	
+	function displayBoilerInfo(info) {
+		displayTemperature(info.temp)
+		displayBoilerStatus(info.boilerStatus);
+	}
+	
+	function displayTemperature(temp) {
+		$("#temperature").html(temp);
+	}
+	
+	function displayBoilerStatus(boilerStatus) {
 		$(".btnBoiler>span").removeClass("glyphicon-ok");
 		if(boilerStatus == "on") {
 			$//("#btnBoilerOn>span").addClass("glyphicon-ok");
