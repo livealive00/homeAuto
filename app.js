@@ -10,13 +10,16 @@ var users = require('./routes/users');
 
 var app = express();
 
+var fs = require('fs');
+var accessLogStream = fs.createWriteStream(__dirname + '/log/access.log', {flags: 'a'});
+
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
 // uncomment after placing your favicon in /public
 app.use(favicon(__dirname + '/public/favicon.ico'));
-app.use(logger('dev'));
+app.use(logger('combined',  {stream: accessLogStream}));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
