@@ -14,7 +14,6 @@
     "express": "~4.10.6",
     "morgan": "~1.5.1",
     "pi-gpio": "0.0.6",
-    "pi-spi": "^0.8.7",
     "serve-favicon": "~2.2.0"
   }
 }
