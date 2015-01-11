@@ -5,22 +5,26 @@ var gpio = require("pi-gpio");
 var ADC = require("adc-pi-gpio");
 
 var tempConnected = false;
+var tempSaved = "ERR";
 var boilerStatus = "on";
+var BSIGN = {ON: 0, OFF: 1};
+var BSIGN_INIT = BSIGN.ON;
 
 var PIN = {BOILER: 7};
 
 /* boiler switch */
 gpio.open(PIN.BOILER, "output", function(err){
-	if(err) { console.error(err); }
+	if(err) { console.error(err);}
+	gpio.write(PIN.BOILER, BSIGN_INIT, function(err) {});
 });
 
 /*SPI*/
-var SPI_CHANNEL = {TEMP: 0};
+var SPI_CH = {TEMP: 0};
 
 var config  = {
-		tolerance: 2,
-		interval: 300,
-		channels: [SPI_CHANNEL.TEMP],
+		tolerance: 8,
+		interval: 60*1000,	// 1min
+		channels: [SPI_CH.TEMP],
 		SPICLK: 23,
 		SPIMISO: 21,
 		SPIMOSI: 19,
@@ -37,31 +41,49 @@ process.on('SIGINT', function() {
 adc.init();
 adc.on('ready', function() {
 	tempConnected = true;
+	adc.read(SPI_CH.TEMP, function(data){
+		saveTemp(data);
+	});
 });
 adc.on('close', function() {
     console.log('ADC terminated');
+	gpio.close(PIN.BOILER);
     process.exit();
 });
-
-function getTemperature() {
-	if(!tempConnected) {
-		return -99;
+adc.on('change', function(data) {
+	console.log("spi changed event - " + data);
+	if(data.channel == SPI_CH.TEMP) {
+		saveTemp(data.value);
 	}
-	adc.read(SPI_CHANNEL.TEMP, function(data) {
-		return data;
-	});
+});
+
+function saveTemp(data) {
+	tempSaved = convertTemp(data);
+	console.log("Temp Saved : " + tempSaved);
+}
+function convertTemp(data) {
+	// data is 12bit value from adc 
+	var vcc = 3.3;
+	var voltOffset = 0.5;
+	var curVolt = (data*vcc) / 4095;
+	var curTemp = 100*(curVolt-voltOffset);
+	return Math.round(curTemp);
 }
 
 module.exports = {
 	info: function(req, res) {
-		res.send({temp: getTemperature(), boilerStatus: boilerStatus});
+		if(tempConnected) {
+			res.send({temp: tempSaved, boilerStatus: boilerStatus});
+		} else {
+			res.send({temp: "ERR", boilerStatus: boilerStatus});
+		}
 	},
 	
 	update: function(req, res) {
 		var status = req.query.status;
 		if(status === "on") {
 			// normally closed = > "on" as default
-			gpio.write(PIN.BOILER, 0, function(err) {
+			gpio.write(PIN.BOILER, BSIGN.ON, function(err) {
 			    if(err) {
 			    	res.send({success: false, boilerStatus: boilerStatus});
 			    } else {
@@ -71,7 +93,7 @@ module.exports = {
 			});
 			
 		} else if (status === 'off'){
-			gpio.write(PIN.BOILER, 1, function(err) {
+			gpio.write(PIN.BOILER, BSIGN.OFF, function(err) {
 				if(err) {
 					res.send({success: false, boilerStatus: boilerStatus});
 				} else {

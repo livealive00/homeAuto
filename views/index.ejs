@@ -82,13 +82,13 @@
 		
 		$("#btnBoilerOn").click(function(){
 			$.get("/boiler/update.json", {status: "on"}, function(data){
-				updateBoilerStatus(data.boilerStatus);
+				displayBoilerStatus(data.boilerStatus);
 			});
 		});
 		
 		$("#btnBoilerOff").click(function() {
 			$.get("/boiler/update.json", {status: "off"}, function(data){
-				updateBoilerStatus(data.boilerStatus);
+				displayBoilerStatus(data.boilerStatus);
 			});
 		});
 		
