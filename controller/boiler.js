@@ -2,7 +2,7 @@
  * Boiler Controller
  */
 var gpio = require("pi-gpio");
-var gpio = require("adc-pi-gpio");
+var ADC = require("adc-pi-gpio");
 
 var tempConnected = false;
 var boilerStatus = "on";
