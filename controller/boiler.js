@@ -1,50 +1,86 @@
 /**
  * Boiler Controller
  */
-var gpio = require("gpio");
-var boilerValid = false;
-var boiler = gpio.export(4, {direction: "out", ready: function(){ boilerValid=true; } });
-var temperatureValid = false;
-var temperature = gpio.export(5, {direction: "in", ready: function(){ temperatureValid=true; }});
+var gpio = require("pi-gpio");
+var gpio = require("adc-pi-gpio");
+
+var tempConnected = false;
+var boilerStatus = "on";
+
+var PIN = {BOILER: 7};
+
+/* boiler switch */
+gpio.open(PIN.BOILER, "output", function(err){
+	if(err) { console.error(err); }
+});
+
+/*SPI*/
+var SPI_CHANNEL = {TEMP: 0};
+
+var config  = {
+		tolerance: 2,
+		interval: 300,
+		channels: [SPI_CHANNEL.TEMP],
+		SPICLK: 23,
+		SPIMISO: 21,
+		SPIMOSI: 19,
+		SPICS: 24
+	};
+var adc = new ADC(config);
+
+process.on('SIGTERM', function() {
+	adc.close();
+});
+process.on('SIGINT', function() {
+	adc.close();
+});
+adc.init();
+adc.on('ready', function() {
+	tempConnected = true;
+});
+adc.on('close', function() {
+    console.log('ADC terminated');
+    process.exit();
+});
 
 function getTemperature() {
-	if(!temperatureValid){
+	if(!tempConnected) {
 		return -99;
 	}
-	
-	return temperature.value;
-}
-
-function getBoilerStatus() {
-	if(!boilerValid){
-		return "off";
-	}
-	
-	return boiler.value;
+	adc.read(SPI_CHANNEL.TEMP, function(data) {
+		return data;
+	});
 }
 
 module.exports = {
 	info: function(req, res) {
-		res.send({temp: getTemperature(), boilerStatus: getBoilerStatus()});
+		res.send({temp: getTemperature(), boilerStatus: boilerStatus});
 	},
 	
 	update: function(req, res) {
-		if(!boilerValid) {
-			res.send({success: false, boilerStatus: "off"});
-			return;
-		}
-		
 		var status = req.query.status;
 		if(status === "on") {
-			boiler.set(function() {
-				res.send({success: true, boilerStatus: boiler.value});
+			// normally closed = > "on" as default
+			gpio.write(PIN.BOILER, 0, function(err) {
+			    if(err) {
+			    	res.send({success: false, boilerStatus: boilerStatus});
+			    } else {
+			    	boilerStatus = "on";
+			    	res.send({success: true, boilerStatus: boilerStatus});
+			    }
 			});
 			
 		} else if (status === 'off'){
-			boiler.set(0, function() {
-				res.send({success: true, boilerStatus: boiler.value});
+			gpio.write(PIN.BOILER, 1, function(err) {
+				if(err) {
+					res.send({success: false, boilerStatus: boilerStatus});
+				} else {
+					boilerStatus = "off";
+					res.send({success: true, boilerStatus: boilerStatus});
+				}
 			});
 		}
+		
 	}
 };
 
